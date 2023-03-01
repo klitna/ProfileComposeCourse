@@ -91,7 +91,7 @@ fun UserProfileDetailsScreen(userId: Int, navController: NavHostController?) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                ProfilePicture(userProfile.drawableId, userProfile.status, 240.dp)
+                ProfilePicture(userProfile.drawableId, userProfile.name, userProfile.status, 240.dp)
                 ProfileContent(userProfile.name, userProfile.status, Alignment.CenterHorizontally)
             }
         }
@@ -114,14 +114,14 @@ fun ProfileCard(user: User, clickAction: () -> Unit){
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ){
-            ProfilePicture(user.drawableId, user.status, 72.dp)
+            ProfilePicture(user.drawableId, user.name, user.status, 72.dp)
             ProfileContent(user.name, user.status, Alignment.Start)
         }
     }
 }
 
 @Composable
-fun ProfilePicture(drawableId: String, status: Boolean, imageSize: Dp){
+fun ProfilePicture(drawableId: String, userName: String, status: Boolean, imageSize: Dp){
     val image: Painter = painterResource(id = R.drawable.ic_cat_letuce)
     Card(
         shape = CircleShape,
@@ -134,7 +134,7 @@ fun ProfilePicture(drawableId: String, status: Boolean, imageSize: Dp){
         elevation = 4.dp
     ){
         Image(
-            painter = rememberAsyncImagePainter(drawableId),
+            painter = rememberAsyncImagePainter(drawableId+userName),
             contentDescription = "letuce cat",
             modifier = Modifier.size(imageSize),
             contentScale = ContentScale.Crop

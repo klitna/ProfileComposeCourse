@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -20,15 +21,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 
 import coil.compose.rememberAsyncImagePainter
 import com.example.profilecardlayout.ui.theme.MyTheme
@@ -38,7 +42,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyTheme() {
-                UsersApplication(userProfileList)
+                UsersApplication()
             }
         }
     }
@@ -47,18 +51,20 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun UserListScreen(userProfiles: List<User> = userProfileList, navController: NavHostController?) {
-    Scaffold(topBar = { AppBar()}) {
+    Scaffold(topBar = {
+        AppBar(
+            title = "Users list",
+            icon = Icons.Default.Home
+        ) { }
+    }) {
         Surface(
             modifier = Modifier.fillMaxSize()
         ){
-            LazyColumn{
-                items(userProfiles){ userProfile ->
-                    if(!userProfile.status)
-                        CompositionLocalProvider(values = *arrayOf(LocalContentAlpha provides ContentAlpha.disabled)) {
-                            ProfileCard(user = userProfile){ navController?.navigate("user_details") }
-                        }
-                    else
-                        ProfileCard(user = userProfile){ run { navController?.navigate("user_details") } }
+            LazyColumn {
+                items(userProfiles) { user ->
+                    ProfileCard(user = user) {
+                        navController?.navigate("user_details/${user.id}")
+                    }
                 }
             }
         }
@@ -67,8 +73,16 @@ fun UserListScreen(userProfiles: List<User> = userProfileList, navController: Na
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun UserProfileDetailsScreen(userProfile: User = userProfileList[0]) {
-    Scaffold(topBar = { AppBar() }) {
+fun UserProfileDetailsScreen(userId: Int, navController: NavHostController?) {
+    val userProfile = userProfileList.first { userProfile -> userId == userProfile.id }
+    Scaffold(topBar = {
+        AppBar(
+            title = "User profile details",
+            icon = Icons.Default.ArrowBack
+        ) {
+            navController?.navigateUp()
+        }
+    }) {
         Surface(
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -107,7 +121,7 @@ fun ProfileCard(user: User, clickAction: () -> Unit){
 }
 
 @Composable
-fun ProfilePicture(drawableId: Int, status: Boolean, imageSize: Dp){
+fun ProfilePicture(drawableId: String, status: Boolean, imageSize: Dp){
     val image: Painter = painterResource(id = R.drawable.ic_cat_letuce)
     Card(
         shape = CircleShape,
@@ -120,7 +134,7 @@ fun ProfilePicture(drawableId: Int, status: Boolean, imageSize: Dp){
         elevation = 4.dp
     ){
         Image(
-            painter = rememberAsyncImagePainter("https://picsum.photos/200"),
+            painter = rememberAsyncImagePainter(drawableId),
             contentDescription = "letuce cat",
             modifier = Modifier.size(imageSize),
             contentScale = ContentScale.Crop
@@ -144,28 +158,35 @@ fun ProfileContent(userName: String, userStatus: Boolean, alignment: Alignment.H
 }
 
 @Composable
-fun AppBar(){
+fun AppBar(title: String, icon: ImageVector, iconClickAction: () -> Unit){
     TopAppBar(
-        title = { Text(text = "Messaging Application users") },
         navigationIcon = {
             Icon(
-                imageVector = Icons.Default.Home,
-                contentDescription = "Home",
-                Modifier.padding(horizontal = 12.dp)
+                icon,
+                contentDescription = "",
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .clickable(onClick = { iconClickAction.invoke() })
             )
         },
+        title = { Text(title) }
     )
 }
 
 @Composable
 fun UsersApplication(userProfiles: List<User> = userProfileList){
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "users_list"){
-        composable("users_list"){
-            UserListScreen(userProfiles, null)
+    NavHost(navController = navController, startDestination = "users_list") {
+        composable("users_list") {
+            UserListScreen(userProfiles, navController)
         }
-        composable("user_details"){
-            UserProfileDetailsScreen()
+        composable(
+            route = "user_details/{userId}",
+            arguments = listOf(navArgument("userId") {
+                type = NavType.IntType
+            })
+        ) { navBackStackEntry ->
+            UserProfileDetailsScreen(navBackStackEntry.arguments!!.getInt("userId"), navController)
         }
     }
 }
@@ -174,7 +195,7 @@ fun UsersApplication(userProfiles: List<User> = userProfileList){
 @Composable
 fun UserProfileDetailsPreview() {
     MyTheme() {
-        UserProfileDetailsScreen()
+        UserProfileDetailsScreen(userId = 0, null)
     }
 }
 
